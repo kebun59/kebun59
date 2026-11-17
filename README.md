@@ -1,48 +1,46 @@
 # Kebun59 — Nursery Management
 
-Aplikasi pengelolaan bisnis pembibitan tanaman. Target operasional tahap ini adalah satu laptop dengan backend Node.js/Express dan database SQLite lokal (tanpa Supabase atau layanan cloud).
+Aplikasi pengelolaan bisnis pembibitan tanaman untuk operasional lokal di satu laptop. Frontend berjalan di browser, backend memakai Node.js/Express, dan database SQLite tersimpan di laptop. Tidak membutuhkan Supabase atau koneksi internet saat operasional.
 
-## Menjalankan di laptop
+## Menjalankan di laptop Windows
 
 1. Pasang **Node.js 20 atau lebih baru**.
-2. Unduh/clone repository ini ke laptop.
-3. Buka terminal pada folder proyek.
-4. Jalankan:
+2. Unduh repository ini sebagai ZIP dari GitHub, lalu ekstrak ke folder di laptop (atau gunakan Git clone).
+3. Buka folder proyek, klik kanan lalu pilih **Open in Terminal**.
+4. Salin file `.env.example` menjadi `.env`.
+5. Ganti `SESSION_SECRET` di `.env` dengan kalimat acak yang panjang.
+6. Jalankan perintah:
 
 ```bash
 npm install
 npm start
 ```
 
-5. Buka http://localhost:3000 di browser.
+7. Buka **http://localhost:3000** di browser.
+8. Pada penggunaan pertama, buat akun Administrator. Password minimal 10 karakter. Setelah itu login menggunakan akun tersebut.
 
-Database dibuat otomatis pada `data/kebun59.sqlite`. Folder `data/` tidak masuk Git agar data operasional tetap berada di laptop.
+Untuk menjalankan lagi di hari berikutnya: buka terminal pada folder proyek, jalankan `npm start`, lalu buka alamat yang sama.
 
-## Backend API (fondasi tahap 1)
+## Fitur yang sudah terhubung ke backend
 
-- `GET /api/health` — status server/database.
-- `GET /api/setup/status` dan `POST /api/setup/admin` — pembuatan administrator pertama.
-- `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` — sesi login.
-- `GET /api/dashboard` — ringkasan dashboard.
-- `/api/plants` — data tanaman (GET/POST/PUT/DELETE).
-- `/api/transactions` — transaksi penjualan/pembelian.
-- `/api/users` — manajemen pengguna.
-- `/api/settings` — profil usaha.
-- `GET /api/audit` — jejak aktivitas administrator.
+- Login dan logout menggunakan sesi server.
+- Pembuatan akun administrator pertama kali.
+- Dashboard ringkasan stok, jenis tanaman, penjualan, dan pengguna aktif.
+- Data tanaman: tambah, edit, hapus, pencarian, dan filter kategori.
+- Transaksi penjualan dan pembelian.
+- User management: tambah akun, ubah nama/email/peran/status.
+- Peran: Administrator, Manajer Kebun, Staf Inventaris, dan Kasir.
+- Laporan persediaan, penjualan, pembelian, dan komposisi kategori.
+- Pengaturan profil usaha.
+- Audit log aktivitas untuk administrator.
+- Password disimpan sebagai hash bcrypt; akses API diperiksa berdasarkan peran di server.
 
-Password disimpan dalam bentuk hash bcrypt. Sesi menggunakan cookie HTTP-only. Akses endpoint diperiksa di server berdasarkan peran pengguna.
+## Database dan pencadangan
 
-## Data dan pencadangan
+Database dibuat otomatis pada `data/kebun59.sqlite`. Folder `data/` dikecualikan dari Git agar data usaha tidak terunggah ke repository.
 
-- Database SQLite tersimpan di `data/kebun59.sqlite`.
-- Tutup aplikasi sebelum menyalin file database untuk backup.
-- Simpan salinan backup di media lain secara berkala.
-- Jangan menghapus folder `data/` jika ingin mempertahankan data.
+Untuk backup, hentikan server (Ctrl+C), salin file `data/kebun59.sqlite` ke flashdisk atau penyimpanan cadangan, lalu jalankan server kembali. Jangan menghapus folder `data/` jika ingin mempertahankan data.
 
-## Status pengerjaan
+## Batasan tahap ini
 
-Backend dan skema database lokal merupakan fondasi awal. Integrasi antarmuka dashboard yang saat ini masih prototipe browser ke endpoint API/login akan menjadi langkah berikutnya. Jangan gunakan data demo pada browser sebagai catatan usaha utama sebelum integrasi UI dan pengujian alur selesai.
-
-## Catatan keamanan
-
-Aplikasi ini dirancang untuk pemakaian lokal pada satu laptop. Jangan membuka port server ke internet atau jaringan umum. Sebelum penggunaan pada jaringan lokal, atur `SESSION_SECRET` menjadi nilai acak yang kuat dan tinjau konfigurasi cookie serta backup.
+Aplikasi ditujukan untuk pemakaian lokal pada satu laptop. Jangan membuka port server ke internet atau jaringan umum. Gunakan backup berkala. Data contoh tanaman awal dapat diedit atau dihapus sesuai kondisi Kebun59.
