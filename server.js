@@ -60,8 +60,8 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 `);
 
-const countUsers = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
-if (countUsers === 0) {
+const countPlants = db.prepare('SELECT COUNT(*) AS n FROM plants').get().n;
+if (countPlants === 0) {
   const insertPlant = db.prepare('INSERT INTO plants (name,category,stock,price,location) VALUES (?,?,?,?,?)');
   const seeds = [
     ['Bibit Durian Musang King','Buah',180,45000,'Greenhouse A'],
@@ -136,7 +136,13 @@ app.post('/api/auth/logout', requireAuth, (req,res) => {
   audit(req,'LOGOUT','session',req.session.user.id);
   req.session.destroy(() => res.clearCookie('kebun59.sid').json({ok:true}));
 });
-app.get('/api/auth/me', (req,res) => res.json({user:req.session.user || null}));
+app.get('/api/auth/me', (req,res) => {
+  if (!req.session.user) return res.json({user:null});
+  const fresh = db.prepare("SELECT id,name,email,role,status FROM users WHERE id=?").get(req.session.user.id);
+  if (!fresh || fresh.status !== 'Aktif') return req.session.destroy(() => res.json({user:null}));
+  req.session.user = {id:fresh.id,name:fresh.name,email:fresh.email,role:fresh.role};
+  res.json({user:req.session.user});
+});
 
 app.get('/api/dashboard', requireAuth, (req,res) => {
   const stock = db.prepare('SELECT COALESCE(SUM(stock),0) AS total, COUNT(*) AS types, COALESCE(SUM(stock*price),0) AS inventoryValue FROM plants').get();
