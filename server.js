@@ -88,12 +88,19 @@ app.use(session({
 }));
 
 const roles = ['Administrator','Manajer Kebun','Staf Inventaris','Kasir'];
-const requireAuth = (req,res,next) => req.session.user ? next() : res.status(401).json({ error: 'Silakan login terlebih dahulu.' });
-const allow = (...allowed) => (req,res,next) => {
+const requireAuth = (req,res,next) => {
   if (!req.session.user) return res.status(401).json({ error: 'Silakan login terlebih dahulu.' });
-  if (!allowed.includes(req.session.user.role)) return res.status(403).json({ error: 'Anda tidak memiliki hak akses.' });
+  const fresh = db.prepare('SELECT id,name,email,role,status FROM users WHERE id=?').get(req.session.user.id);
+  if (!fresh || fresh.status !== 'Aktif') {
+    return req.session.destroy(() => res.status(401).json({ error: 'Sesi berakhir atau akun nonaktif. Silakan login kembali.' }));
+  }
+  req.session.user = {id:fresh.id,name:fresh.name,email:fresh.email,role:fresh.role};
   next();
 };
+const allow = (...allowed) => (req,res,next) => requireAuth(req,res,() => {
+  if (!allowed.includes(req.session.user.role)) return res.status(403).json({ error: 'Anda tidak memiliki hak akses.' });
+  next();
+});
 const audit = (req, action, entity, entityId, detail = '') => db.prepare(
   'INSERT INTO audit_logs(user_id,action,entity,entity_id,detail) VALUES (?,?,?,?,?)'
 ).run(req.session.user?.id || null, action, entity, entityId || null, detail);
@@ -191,7 +198,7 @@ app.put('/api/users/:id', allow('Administrator'), (req,res) => {
   const {name,email,role,status} = req.body || {};
   if (!name?.trim() || !/^\S+@\S+\.\S+$/.test(email || '') || !roles.includes(role) || !['Aktif','Nonaktif'].includes(status))
     return res.status(400).json({error:'Data pengguna tidak valid.'});
-  if (Number(req.params.id) === req.session.user.id && status !== 'Aktif') return res.status(400).json({error:'Anda tidak dapat menonaktifkan akun sendiri.'});
+  if (Number(req.params.id) === req.session.user.id && (status !== 'Aktif' || role !== 'Administrator')) return res.status(400).json({error:'Anda tidak dapat menonaktifkan atau menurunkan peran akun sendiri.'});
   try {
     const r = db.prepare('UPDATE users SET name=?,email=?,role=?,status=? WHERE id=?').run(name.trim(),email.trim(),role,status,req.params.id);
     if (!r.changes) return res.status(404).json({error:'Pengguna tidak ditemukan.'});
